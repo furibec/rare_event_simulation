@@ -4,6 +4,8 @@ This repository contains python implementations of three simulation methods used
 2. SIS: sequential importance sampling (adaptive pCN algorithm as MCMC)
 3. SuS: subset simulation (adaptive pCN algorithm as MCMC)
 
+(4. Soon... iCEred: cross-entropy method with failure informed dimension reduction)
+
 The target example is given by a 1D diffusion equation. The conductivity parameter is a log-normal random field which is represented using the KL expansion. The flux is also random and modeled as a Gaussian random variable.
 
 * main_example.py is the running file
