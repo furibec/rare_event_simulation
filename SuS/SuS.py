@@ -2,7 +2,7 @@
 # Subset simulation with adaptive pCN algorithm
 # ============================================================================
 # Created by:
-# Felipe Uribe @ TUM, DTU
+# Felipe Uribe @ TUM
 # =============================================================================
 # The methods work on the standard Gaussian space, transform your input random
 # variables accordingly

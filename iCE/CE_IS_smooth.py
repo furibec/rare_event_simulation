@@ -2,7 +2,7 @@
 # Cross entropy method with smooth indicator function
 # =============================================================================
 # Created by:
-# Felipe Uribe @ MIT, TUM, DTU
+# Felipe Uribe @ MIT, TUM
 # =============================================================================
 # * The methods work on the standard Gaussian space, transform your input random
 # variables accordingly
