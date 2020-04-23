@@ -1,4 +1,4 @@
-# rare event simulation algorithms
+# Rare event simulation algorithms
 This repository contains python implementations of three simulation methods used in reliability analysis/rare event simulation:
 1. iCE: improved cross-entropy method (single Gaussian and Gaussian mixture biasing densities)
 2. SIS: sequential importance sampling (adaptive pCN algorithm as MCMC)
