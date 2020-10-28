@@ -5,9 +5,9 @@
 # Felipe Uribe @ MIT, TUM
 # =============================================================================
 # Based on:
-# 1."Cross-entropy-based importance sampling with failure-informed dimension 
+# 1."Cross-entropy-based importance sampling with failure-informed dimension
 #    reduction for rare event simulation"
-#    Uribe et al. 2020 (submitted)
+#    Uribe et al. 2020 (SIAM)
 # =============================================================================
 # Version 2019-09
 # =============================================================================
@@ -21,55 +21,54 @@ import matplotlib.pyplot as plt
 #
 from iCEred import SG_local
 
-#============================================================================
+# ============================================================================
 # numerical model
-dim   = int(1e2)   # dimension of the inputs >=2
+dim = int(5e2)     # dimension of the inputs >=2
 kappa = 5          # curvature parameter
-beta  = 4          # threshold
+beta = 4           # threshold
 
 # exact probability of failure
-func  = lambda u, v: sps.norm.pdf(-u + 0.5*kappa*v**2, loc=0, scale=1) * sps.norm.pdf(v, loc=0, scale=1)
+func = lambda u, v: sps.norm.pdf(-u + 0.5*kappa*v**2, loc=0, scale=1) * sps.norm.pdf(v, loc=0, scale=1)
 Pf_ex = sp.integrate.dblquad(func, -np.inf, np.inf, lambda u: -np.inf, lambda u: -beta)[0]
 
-#============================================================================
+# ============================================================================
 # iCEred method
-NSIM       = int(5e1)    # number of independent iCEred runs
-N          = int(5e2)    # number of samples for each level
-delta_star = 1.5         # target cv of the weights
-refin      = 1           # perform final refinement of Pf (=1) or not (=0)
-epsilon    = 0.01        # desired tolerance of the certified approximation
+NSIM = int(5e1)       # number of independent iCEred runs
+N = int(1e3)          # number of samples for each level
+delta_star = 1.5      # target cv of the weights
+epsilon = 0.01        # desired tolerance of the certified approximation
+refin = 1             # perform final refinement of Pf (=1) or not (=0)
 
 # LSF and gradient for all samples (x in R^{dim x N})
-g_LSF      = lambda x: beta + (kappa/4)*(x[0,:]-x[1,:])**2 - np.sum(x, axis=0)/np.sqrt(dim)
-grad_g_LSF = lambda x: np.concatenate( ((((kappa/2)*( x[0,:] - x[1,:]))-(1/np.sqrt(dim))).reshape((N,1)), \
-                                        (((kappa/2)*(-x[0,:] + x[1,:]))-(1/np.sqrt(dim))).reshape((N,1)), \
-                                        -(1/np.sqrt(dim))*np.ones((N,dim-2)) ), axis=1 )
+g_LSF = lambda x: beta + (kappa/4)*(x[0, :]-x[1, :])**2 - np.sum(x, axis=0)/np.sqrt(dim)
+grad_g_LSF = lambda x: np.concatenate(((((kappa/2)*(x[0, :] - x[1, :]))-(1/np.sqrt(dim))).reshape((N, 1)),
+                                        (((kappa/2)*(-x[0, :] + x[1, :]))-(1/np.sqrt(dim))).reshape((N, 1)),
+                                        -(1/np.sqrt(dim))*np.ones((N, dim-2))), axis=1)
 
 # choose smooth indicator function
 f = 'tanh'
 if (f == 'erf'):
-    I_smooth         = lambda s, geval: sps.norm.cdf(-geval/s) #0.5 * (1 + sp.special.erf(-geval/(np.sqrt(2)*s)))
-    grad_logI_smooth = lambda s, geval, x: (sps.norm.pdf(-geval/s)/sps.norm.cdf(-geval/s)).reshape((N,1)) \
-                                            * (-grad_g_LSF(x)/s) 
+    I_smooth = lambda s, geval: sps.norm.cdf(-geval/s)  # 0.5 * (1 + sp.special.erf(-geval/(np.sqrt(2)*s)))
+    grad_logI_smooth = lambda s, geval, x: (sps.norm.pdf(-geval/s)/sps.norm.cdf(-geval/s)).reshape((N, 1)) \
+                                        * (-grad_g_LSF(x)/s)
 elif (f == 'tanh'):
-    I_smooth         = lambda s, geval: 0.5 * (1 + np.tanh(-geval/s))
-    grad_logI_smooth = lambda s, geval, x: (1 + np.tanh(geval/s)).reshape((N,1)) * (-grad_g_LSF(x)/s)    
+    I_smooth = lambda s, geval: 0.5 * (1 + np.tanh(-geval/s))
+    grad_logI_smooth = lambda s, geval, x: (1 + np.tanh(geval/s)).reshape((N, 1))*(-grad_g_LSF(x)/s)
 
-#============================================================================
+# ============================================================================
 np.random.seed(seed=1)
 set_seed = np.random.randint(0, 2**31 - 1, (NSIM, 1))
-Pf       = np.empty((NSIM))
 #
-Pf            = np.empty((NSIM))
-s_params      = list()
+Pf = np.empty((NSIM))
+s_params = list()
 u_j_samples_F = list()
-cost          = list()
-rank          = list()
+cost = list()
+rank = list()
 #
 print('\n\n==========iCEred-based IS==========')
-for i in range(NSIM):  
+for i in range(NSIM):
     print('\n***Simulation ', i+1, '/', NSIM, '\n')
-    Pf[i], s_param, samples, geval, rr, cc = SG_local(dim, N, delta_star, g_LSF, I_smooth, \
+    Pf[i], s_param, samples, geval, rr, cc = SG_local(dim, N, delta_star, g_LSF, I_smooth,
                                                     grad_logI_smooth, refin, epsilon, set_seed[i])
     #
     s_params.append(s_param)
@@ -78,17 +77,17 @@ for i in range(NSIM):
     rank.append(rr)
 #
 Pf_mean = np.mean(Pf)
-Pf_std  = np.std(Pf)
-Pf_cov  = Pf_std / Pf_mean
+Pf_std = np.std(Pf)
+Pf_cov = Pf_std / Pf_mean
 print('\n***** Average probability of failure iCEred is:', Pf_mean, 'cv=', Pf_cov, '*****')
 print('***** Exact probability of failure is:', Pf_ex, '*****\n')
 
-#============================================================================
+# ============================================================================
 plt.figure()
 plt.semilogy(Pf, 'r*')
+plt.semilogy(Pf_ex*np.ones(NSIM), 'b-')
 plt.semilogy(Pf_mean*np.ones(NSIM), 'r--')
-plt.semilogy(Pf_ex*np.ones(NSIM), 'k-')
 plt.xlabel('sims')
 plt.ylabel('Pf')
-plt.tight_layout()  
+plt.tight_layout()
 plt.show()
